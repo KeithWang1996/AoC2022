@@ -93,10 +93,128 @@ int D1P2()
 	return maxSum0 + maxSum1 + maxSum2;
 }
 
+int GetMyRockPaperScissorResult(char others, char mine)
+{
+	char othersCompare = others + 23;
+
+	char diff = othersCompare - mine;
+
+	switch (diff)
+	{
+	case 0:
+		return 3;
+		break;
+	case 1:
+		return 0;
+		break;
+	case 2:
+		return 6;
+		break;
+	case -1:
+		return 6;
+		break;
+	case -2:
+		return 0;
+		break;
+	default:
+		return 0;
+		break;
+	}
+}
+
+
+int GetMyRockPaperScissorScore(char others, char mine)
+{
+	int score = GetMyRockPaperScissorResult(others, mine);
+	switch (mine)
+	{
+	case 'X':
+		score += 1;
+		break;
+	case 'Y':
+		score += 2;
+		break;
+	case 'Z':
+		score += 3;
+		break;
+	default:
+		break;
+	}
+
+	return score;
+}
+
+int D2P1()
+{
+	std::vector<std::string> lines = LineParser("Inputs/input1", '\n');
+
+	int score = 0;
+	for (std::string& line : lines)
+	{
+		score += GetMyRockPaperScissorScore(line[0], line[2]);
+	}
+
+	return score;
+}
+
+int GetMyRockPaperScissorScoreNew(char others, char mine)
+{
+	int score = 0;
+	int othersInt = others - 64;
+
+	switch (mine)
+	{
+	case 'X':
+		score += 0;
+		if (othersInt > 1)
+		{
+			score += othersInt - 1;
+		}
+		else
+		{
+			score += 3;
+		}
+		break;
+	case 'Y':
+		score += 3 + othersInt;
+		break;
+	case 'Z':
+		score += 6;
+		if (othersInt >= 3)
+		{
+			score += 1;
+		}
+		else
+		{
+			score += othersInt + 1;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return score;
+}
+
+int D2P2()
+{
+	std::vector<std::string> lines = LineParser("Inputs/input1", '\n');
+
+	int score = 0;
+	for (std::string& line : lines)
+	{
+		score += GetMyRockPaperScissorScoreNew(line[0], line[2]);
+	}
+
+	return score;
+}
+
 int main()
 {
 	std::cout << "D1P1 answer is: " << D1P1() << std::endl;
 	std::cout << "D1P2 answer is: " << D1P2() << std::endl;
+	std::cout << "D2P1 answer is: " << D2P1() << std::endl;
+	std::cout << "D2P2 answer is: " << D2P2() << std::endl;
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
