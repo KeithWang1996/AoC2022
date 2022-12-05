@@ -8,6 +8,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <stack>
 
 std::vector<std::string> LineParser(const char* filePath, const char divider)
 {
@@ -413,6 +414,153 @@ int D4P2()
 	return result;
 }
 
+void LoadCargos(const std::vector<std::string>& lines, std::vector<std::stack<char>>& cargos, size_t spaceIndex)
+{
+	std::vector<size_t> stackIndices;
+
+	for (int i = 0; i < lines[spaceIndex - 1].size(); ++i)
+	{
+		if (lines[spaceIndex - 1][i] != ' ')
+		{
+			stackIndices.push_back(i);
+
+			std::stack<char> pile;
+			cargos.push_back(pile);
+		}
+	}
+
+	for (int i = spaceIndex - 2; i >= 0; --i)
+	{
+		const std::string& currLine = lines[i];
+		for (int j = 0; j < stackIndices.size(); ++j)
+		{
+			if (currLine[stackIndices[j]] != ' ')
+			{
+				cargos[j].push(currLine[stackIndices[j]]);
+			}
+		}
+	}
+}
+
+void ProcessMoveCommand(const std::string& command, std::vector<std::stack<char>>& cargos)
+{
+	std::vector<std::string> dividedCommand;
+
+	DivideStringByDelimiter(command, ' ', dividedCommand);
+
+	int num = std::atoi(dividedCommand[1].c_str());
+	int from = std::atoi(dividedCommand[3].c_str()) - 1;
+	int to = std::atoi(dividedCommand[5].c_str()) - 1;
+
+	for (int i = 0; i < num; ++i)
+	{
+		if (cargos[from].empty())
+		{
+			return;
+		}
+		char cargo = cargos[from].top();
+		cargos[from].pop();
+		cargos[to].push(cargo);
+	}
+}
+
+std::string D5P1()
+{
+	std::vector<std::string> lines = LineParser("Inputs/input4", '\n');
+	std::vector<std::stack<char>> cargos;
+
+	size_t spaceIndex = 0;
+	for (int i = 0; i < lines.size(); ++i)
+	{
+		if (lines[i].empty())
+		{
+			spaceIndex = i;
+			break;
+		}
+	}
+
+
+	LoadCargos(lines, cargos, spaceIndex);
+
+	for (int i = spaceIndex + 1; i < lines.size(); ++i)
+	{
+		ProcessMoveCommand(lines[i], cargos);
+	}
+
+	std::string result = "";
+
+	for (const std::stack<char> pile : cargos)
+	{
+		result += pile.top();
+	}
+
+	return result;
+}
+
+void ProcessMoveCommandNew(const std::string& command, std::vector<std::stack<char>>& cargos)
+{
+	std::vector<std::string> dividedCommand;
+
+	DivideStringByDelimiter(command, ' ', dividedCommand);
+
+	int num = std::atoi(dividedCommand[1].c_str());
+	int from = std::atoi(dividedCommand[3].c_str()) - 1;
+	int to = std::atoi(dividedCommand[5].c_str()) - 1;
+
+	std::stack<char> temp;
+
+	for (int i = 0; i < num; ++i)
+	{
+		if (cargos[from].empty())
+		{
+			return;
+		}
+		char cargo = cargos[from].top();
+		cargos[from].pop();
+		temp.push(cargo);
+	}
+
+	while (!temp.empty())
+	{
+		char cargo = temp.top();
+		cargos[to].push(cargo);
+		temp.pop();
+	}
+}
+
+std::string D5P2()
+{
+	std::vector<std::string> lines = LineParser("Inputs/input4", '\n');
+	std::vector<std::stack<char>> cargos;
+
+	size_t spaceIndex = 0;
+	for (int i = 0; i < lines.size(); ++i)
+	{
+		if (lines[i].empty())
+		{
+			spaceIndex = i;
+			break;
+		}
+	}
+
+
+	LoadCargos(lines, cargos, spaceIndex);
+
+	for (int i = spaceIndex + 1; i < lines.size(); ++i)
+	{
+		ProcessMoveCommandNew(lines[i], cargos);
+	}
+
+	std::string result = "";
+
+	for (const std::stack<char> pile : cargos)
+	{
+		result += pile.top();
+	}
+
+	return result;
+}
+
 int main()
 {
 	std::cout << "D1P1 answer is: " << D1P1() << std::endl;
@@ -423,6 +571,8 @@ int main()
 	std::cout << "D3P2 answer is: " << D3P2() << std::endl;
 	std::cout << "D4P1 answer is: " << D4P1() << std::endl;
 	std::cout << "D4P2 answer is: " << D4P2() << std::endl;
+	std::cout << "D5P1 answer is: " << D5P1() << std::endl;
+	std::cout << "D5P2 answer is: " << D5P2() << std::endl;
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
