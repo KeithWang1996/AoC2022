@@ -561,6 +561,53 @@ std::string D5P2()
 	return result;
 }
 
+int D6P1()
+{
+	std::vector<std::string> lines = LineParser("Inputs/input5", '\n');
+	std::string line = lines[0];
+
+	std::set<char> window;
+
+	for (int i = 3; i < line.size(); ++i)
+	{
+		window.insert(line[i - 3]);
+		window.insert(line[i - 2]);
+		window.insert(line[i - 1]);
+		window.insert(line[i]);
+		
+		if (window.size() >= 4)
+		{
+			return i + 1;
+		}
+
+		window.clear();
+	}
+}
+
+int D6P2()
+{
+	std::vector<std::string> lines = LineParser("Inputs/input5", '\n');
+	std::string line = lines[0];
+
+	std::set<char> window;
+
+	for (int i = 13; i < line.size(); ++i)
+	{
+		for (int j = i - 13; j <= i; ++j)
+		{
+			window.insert(line[j]);
+		}
+		
+
+		if (window.size() >= 14)
+		{
+			return i + 1;
+		}
+
+		window.clear();
+	}
+}
+
 int main()
 {
 	std::cout << "D1P1 answer is: " << D1P1() << std::endl;
@@ -573,6 +620,8 @@ int main()
 	std::cout << "D4P2 answer is: " << D4P2() << std::endl;
 	std::cout << "D5P1 answer is: " << D5P1() << std::endl;
 	std::cout << "D5P2 answer is: " << D5P2() << std::endl;
+	std::cout << "D5P1 answer is: " << D6P1() << std::endl;
+	std::cout << "D5P1 answer is: " << D6P2() << std::endl;
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
