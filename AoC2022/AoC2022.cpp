@@ -418,7 +418,7 @@ void LoadCargos(const std::vector<std::string>& lines, std::vector<std::stack<ch
 {
 	std::vector<size_t> stackIndices;
 
-	for (int i = 0; i < lines[spaceIndex - 1].size(); ++i)
+	for (size_t i = 0; i < lines[spaceIndex - 1].size(); ++i)
 	{
 		if (lines[spaceIndex - 1][i] != ' ')
 		{
@@ -432,7 +432,7 @@ void LoadCargos(const std::vector<std::string>& lines, std::vector<std::stack<ch
 	for (int i = spaceIndex - 2; i >= 0; --i)
 	{
 		const std::string& currLine = lines[i];
-		for (int j = 0; j < stackIndices.size(); ++j)
+		for (size_t j = 0; j < stackIndices.size(); ++j)
 		{
 			if (currLine[stackIndices[j]] != ' ')
 			{
@@ -470,7 +470,7 @@ std::string D5P1()
 	std::vector<std::stack<char>> cargos;
 
 	size_t spaceIndex = 0;
-	for (int i = 0; i < lines.size(); ++i)
+	for (size_t i = 0; i < lines.size(); ++i)
 	{
 		if (lines[i].empty())
 		{
@@ -482,7 +482,7 @@ std::string D5P1()
 
 	LoadCargos(lines, cargos, spaceIndex);
 
-	for (int i = spaceIndex + 1; i < lines.size(); ++i)
+	for (size_t i = spaceIndex + 1; i < lines.size(); ++i)
 	{
 		ProcessMoveCommand(lines[i], cargos);
 	}
@@ -534,7 +534,7 @@ std::string D5P2()
 	std::vector<std::stack<char>> cargos;
 
 	size_t spaceIndex = 0;
-	for (int i = 0; i < lines.size(); ++i)
+	for (size_t i = 0; i < lines.size(); ++i)
 	{
 		if (lines[i].empty())
 		{
@@ -546,7 +546,7 @@ std::string D5P2()
 
 	LoadCargos(lines, cargos, spaceIndex);
 
-	for (int i = spaceIndex + 1; i < lines.size(); ++i)
+	for (size_t i = spaceIndex + 1; i < lines.size(); ++i)
 	{
 		ProcessMoveCommandNew(lines[i], cargos);
 	}
@@ -568,7 +568,7 @@ int D6P1()
 
 	std::set<char> window;
 
-	for (int i = 3; i < line.size(); ++i)
+	for (size_t i = 3; i < line.size(); ++i)
 	{
 		window.insert(line[i - 3]);
 		window.insert(line[i - 2]);
@@ -582,6 +582,7 @@ int D6P1()
 
 		window.clear();
 	}
+	return 0;
 }
 
 int D6P2()
@@ -591,9 +592,9 @@ int D6P2()
 
 	std::set<char> window;
 
-	for (int i = 13; i < line.size(); ++i)
+	for (size_t i = 13; i < line.size(); ++i)
 	{
-		for (int j = i - 13; j <= i; ++j)
+		for (size_t j = i - 13; j <= i; ++j)
 		{
 			window.insert(line[j]);
 		}
@@ -606,7 +607,180 @@ int D6P2()
 
 		window.clear();
 	}
+
+	return 0;
 }
+
+struct Directory
+{
+	Directory(std::string name, Directory* parent)
+	{
+		m_name = name;
+		m_parent = parent;
+	}
+
+	~Directory()
+	{
+		for (auto itr = m_children.begin(); itr != m_children.end(); ++itr)
+		{
+			delete itr->second;
+		}
+
+		m_children.clear();
+	}
+
+	int GetTotalSize()
+	{
+		int totalSize = 0;
+
+		for (auto itr = m_files.begin(); itr != m_files.end(); ++itr)
+		{
+			totalSize += itr->second;
+		}
+
+		for (auto itr = m_children.begin(); itr != m_children.end(); ++itr)
+		{
+			totalSize += itr->second->GetTotalSize();
+		}
+
+		return totalSize;
+	}
+
+	int SumOfDirectoriesBelow(int limit)
+	{
+		int totalSize = 0;
+
+		if (GetTotalSize() <= limit)
+		{
+			totalSize += GetTotalSize();
+		}
+
+		for (auto itr = m_children.begin(); itr != m_children.end(); ++itr)
+		{
+			totalSize += itr->second->SumOfDirectoriesBelow(limit);
+		}
+
+		return totalSize;
+	}
+
+	int FindSmallestDirAbove(int limit)
+	{
+		int totalSize = GetTotalSize();
+
+		if (totalSize < limit)
+		{
+			return 0;
+		}
+
+		if (m_children.empty())
+		{
+			return totalSize;
+		}
+
+		int result = totalSize;
+
+		for (auto itr = m_children.begin(); itr != m_children.end(); ++itr)
+		{
+			int temp = itr->second->FindSmallestDirAbove(limit);
+			if (temp >= limit && temp <= result)
+			{
+				result = temp;
+			}
+		}
+
+		return result;
+	}
+
+	std::string m_name;
+	std::map<std::string, int> m_files;
+	std::map<std::string, Directory*> m_children;
+	Directory* m_parent = nullptr;
+};
+
+Directory* InitializeFileSystem(const char* filePath)
+{
+	Directory* root = new Directory("", nullptr);
+	Directory* currDir = root;
+	std::vector<std::string> lines = LineParser(filePath, '\n');
+
+	for (const std::string& line : lines)
+	{
+		std::vector<std::string> words;
+		DivideStringByDelimiter(line, ' ', words);
+
+		if (!currDir)
+		{
+			return root;
+		}
+
+		if (words[0] == "$")
+		{
+			if (words[1] == "cd")
+			{
+				if (words[2] == "/")
+				{
+					currDir = root;
+				}
+				else if (words[2] == "..")
+				{
+					currDir = currDir->m_parent;
+				}
+				else
+				{
+					currDir = currDir->m_children[words[2]];
+				}
+			}
+			else if (words[1] == "ls")
+			{
+				// Do nothing for ls now
+				continue;
+			}
+		}
+		else if (words[0] == "dir")
+		{
+			if (currDir->m_children.find(words[1]) == currDir->m_children.end())
+			{
+				currDir->m_children[words[1]] = new Directory(words[1], currDir);
+			}
+		}
+		else
+		{
+			if (currDir->m_files.find(words[1]) == currDir->m_files.end())
+			{
+				currDir->m_files[words[1]] = std::atoi(words[0].c_str());
+			}
+		}
+	}
+
+	return root;
+}
+
+int D7P1()
+{
+	Directory* root = InitializeFileSystem("Inputs/input6");
+
+	int result = root->SumOfDirectoriesBelow(100000);
+
+	delete root;
+
+	return result;
+}
+
+int D7P2()
+{
+	Directory* root = InitializeFileSystem("Inputs/input6");
+
+	int totalSize = root->GetTotalSize();
+
+	int diff = totalSize - 40000000;
+
+	int result = root->FindSmallestDirAbove(diff);
+
+	delete root;
+
+	return result;
+}
+
 
 int main()
 {
@@ -620,8 +794,10 @@ int main()
 	std::cout << "D4P2 answer is: " << D4P2() << std::endl;
 	std::cout << "D5P1 answer is: " << D5P1() << std::endl;
 	std::cout << "D5P2 answer is: " << D5P2() << std::endl;
-	std::cout << "D5P1 answer is: " << D6P1() << std::endl;
-	std::cout << "D5P1 answer is: " << D6P2() << std::endl;
+	std::cout << "D6P1 answer is: " << D6P1() << std::endl;
+	std::cout << "D6P1 answer is: " << D6P2() << std::endl;
+	std::cout << "D7P1 answer is: " << D7P1() << std::endl;
+	std::cout << "D7P2 answer is: " << D7P2() << std::endl;
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
