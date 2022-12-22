@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <unordered_set>
 #include <map>
 #include <stack>
 
@@ -781,23 +782,530 @@ int D7P2()
 	return result;
 }
 
+bool CheckVisibilityUp(const std::vector<std::string>& grid, size_t x, size_t y)
+{
+	char tree = grid[y][x];
+
+	for (int i = y - 1; i >= 0; --i)
+	{
+		if (tree <= grid[i][x])
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool CheckVisibilityDown(const std::vector<std::string>& grid, size_t x, size_t y)
+{
+	char tree = grid[y][x];
+
+	for (size_t i = y + 1; i < grid.size(); ++i)
+	{
+		if (tree <= grid[i][x])
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool CheckVisibilityLeft(const std::vector<std::string>& grid, size_t x, size_t y)
+{
+	char tree = grid[y][x];
+
+	for (int i = x - 1; i >= 0; --i)
+	{
+		if (tree <= grid[y][i])
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool CheckVisibilityRight(const std::vector<std::string>& grid, size_t x, size_t y)
+{
+	char tree = grid[y][x];
+
+	for (size_t i = x + 1; i < grid[0].size(); ++i)
+	{
+		if (tree <= grid[y][i])
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+int D8P1()
+{
+	std::vector<std::string> grid = LineParser("Inputs/input7", '\n');
+
+	int count = 0;
+
+	for (size_t i = 0; i < grid[0].size(); ++i)
+	{
+		for (size_t j = 0; j < grid.size(); ++j)
+		{
+			if (CheckVisibilityUp(grid, i, j) || CheckVisibilityDown(grid, i, j) || CheckVisibilityLeft(grid, i, j) || CheckVisibilityRight(grid, i, j))
+			{
+				count++;
+			}
+		}
+	}
+
+	return count;
+}
+
+int GetViewDistanceUp(const std::vector<std::string>& grid, size_t x, size_t y)
+{
+	char tree = grid[y][x];
+
+	int count = 0;
+
+	for (int i = y - 1; i >= 0; --i)
+	{
+		count++;
+		if (tree <= grid[i][x])
+		{
+			return count;
+		}
+	}
+
+	return count;
+}
+
+int GetViewDistanceDown(const std::vector<std::string>& grid, size_t x, size_t y)
+{
+	char tree = grid[y][x];
+
+	int count = 0;
+
+	for (size_t i = y + 1; i < grid.size(); ++i)
+	{
+		count++;
+		if (tree <= grid[i][x])
+		{
+			return count;
+		}
+	}
+
+	return count;
+}
+
+int GetViewDistanceLeft(const std::vector<std::string>& grid, size_t x, size_t y)
+{
+	char tree = grid[y][x];
+
+	int count = 0;
+
+	for (int i = x - 1; i >= 0; --i)
+	{
+		count++;
+		if (tree <= grid[y][i])
+		{
+			return count;
+		}
+	}
+
+	return count;
+}
+
+int GetViewDistanceRight(const std::vector<std::string>& grid, size_t x, size_t y)
+{
+	char tree = grid[y][x];
+
+	int count = 0;
+
+	for (size_t i = x + 1; i < grid[0].size(); ++i)
+	{
+		count++;
+		if (tree <= grid[y][i])
+		{
+			return count;
+		}
+	}
+
+	return count;
+}
+
+int D8P2()
+{
+	std::vector<std::string> grid = LineParser("Inputs/input7", '\n');
+
+	int highestScore = 0;
+
+	for (size_t i = 0; i < grid[0].size(); ++i)
+	{
+		for (size_t j = 0; j < grid.size(); ++j)
+		{
+			int currScore = GetViewDistanceUp(grid, i, j) * GetViewDistanceDown(grid, i, j) * GetViewDistanceLeft(grid, i, j) * GetViewDistanceRight(grid, i, j);
+			if (currScore > highestScore)
+			{
+				highestScore = currScore;
+			}
+		}
+	}
+
+	return highestScore;
+}
+
+struct IntVec2
+{
+	int x = 0;
+	int y = 0;
+
+	struct HashFunction
+	{
+		size_t operator()(const IntVec2& point) const
+		{
+			size_t xHash = std::hash<int>()(point.x);
+			size_t yHash = std::hash<int>()(point.y) << 1;
+			return xHash ^ yHash;
+		}
+	};
+
+	IntVec2() = default;
+	IntVec2(int initX, int initY)
+	{
+		x = initX;
+		y = initY;
+	}
+
+	bool IsEqual(const IntVec2& other) const
+	{
+		if (x != other.x)
+
+		{
+			return false;
+		}
+
+		if (y != other.y)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	bool operator==(const IntVec2& other) const
+	{
+		return IsEqual(other);
+	}
+
+	bool operator!=(const IntVec2& other) const
+	{
+		return !IsEqual(other);
+	}
+
+	void operator+=(const IntVec2& other)
+	{
+		x += other.x;
+		y += other.y;
+	}
+};
+
+void UpdateTailByHead(const IntVec2& head, IntVec2& tail)
+{
+	if (head.x - tail.x >= 2)
+	{
+		tail.x += 1;
+		if (head.y - tail.y > 0)
+		{
+			tail.y += 1;
+		}
+		else if (head.y - tail.y < 0)
+		{
+			tail.y -= 1;
+		}
+	}
+
+	if (head.y - tail.y >= 2)
+	{
+		tail.y += 1;
+		if (head.x - tail.x > 0)
+		{
+			tail.x += 1;
+		}
+		else if (head.x - tail.x < 0)
+		{
+			tail.x -= 1;
+		}
+	}
+
+	if (head.x - tail.x <= -2)
+	{
+		tail.x -= 1;
+		if (head.y - tail.y > 0)
+		{
+			tail.y += 1;
+		}
+		else if (head.y - tail.y < 0)
+		{
+			tail.y -= 1;
+		}
+	}
+
+	if (head.y - tail.y <= -2)
+	{
+		tail.y -= 1;
+		if (head.x - tail.x > 0)
+		{
+			tail.x += 1;
+		}
+		else if (head.x - tail.x < 0)
+		{
+			tail.x -= 1;
+		}
+	}
+}
+
+int D9P1()
+{
+	std::vector<std::string> lines = LineParser("Inputs/input8", '\n');
+	IntVec2 head(0, 0);
+	IntVec2 tail(0, 0);
+
+	std::unordered_set<IntVec2, IntVec2::HashFunction> positions;
+	positions.insert(tail);
+
+	for (const std::string line : lines)
+	{
+		std::vector<std::string> words;
+		DivideStringByDelimiter(line, ' ', words);
+		IntVec2 diff;
+		if (words[0] == "U")
+		{
+			diff = IntVec2(0, 1);
+		}
+		else if (words[0] == "D")
+		{
+			diff = IntVec2(0, -1);
+		}
+		else if (words[0] == "R")
+		{
+			diff = IntVec2(1, 0);
+		}
+		else if (words[0] == "L")
+		{
+			diff = IntVec2(-1, 0);
+		}
+		int loops = std::atoi(words[1].c_str());
+		for (int i = 0; i < loops; ++i)
+		{
+			head += diff;
+			UpdateTailByHead(head, tail);
+			positions.insert(tail);
+		}
+	}
+
+	return positions.size();
+}
+
+int D9P2()
+{
+	std::vector<std::string> lines = LineParser("Inputs/input8", '\n');
+	IntVec2 rope[10];
+
+	std::unordered_set<IntVec2, IntVec2::HashFunction> positions;
+	positions.insert(rope[1]);
+
+	for (const std::string line : lines)
+	{
+		std::vector<std::string> words;
+		DivideStringByDelimiter(line, ' ', words);
+		IntVec2 diff;
+		if (words[0] == "U")
+		{
+			diff = IntVec2(0, 1);
+		}
+		else if (words[0] == "D")
+		{
+			diff = IntVec2(0, -1);
+		}
+		else if (words[0] == "R")
+		{
+			diff = IntVec2(1, 0);
+		}
+		else if (words[0] == "L")
+		{
+			diff = IntVec2(-1, 0);
+		}
+		int loops = std::atoi(words[1].c_str());
+		for (int i = 0; i < loops; ++i)
+		{
+			rope[0] += diff;
+			for(int j = 1; j < 10; ++j)
+			{
+				UpdateTailByHead(rope[j - 1], rope[j]);
+				positions.insert(rope[9]);
+			}
+		}
+	}
+
+	return positions.size();
+}
+
+enum class OperationType
+{
+	ADD_X,
+	NOOP
+};
+
+struct Operation
+{
+	OperationType m_type = OperationType::NOOP;
+	int m_value = 0;
+	int m_loopsRemain = 0;
+};
+
+int D10P1()
+{
+	std::vector<std::string> lines = LineParser("Inputs/input9", '\n');
+
+	int x = 1;
+
+	int result = 0;
+
+	int loopsTaken = 0;
+	Operation currOperation;
+	int lineIndex = 0;
+
+	for (;lineIndex < lines.size();)
+	{
+		if (currOperation.m_loopsRemain <= 0)
+		{
+			// Finish currOperation
+			if (currOperation.m_type == OperationType::ADD_X)
+			{
+				x += currOperation.m_value;
+			}
+
+			// Adding new operation
+			std::vector<std::string> words;
+			DivideStringByDelimiter(lines[lineIndex], ' ', words);
+
+			Operation newOperation;
+
+			if (words[0] == "addx")
+			{
+				newOperation.m_type = OperationType::ADD_X;
+				newOperation.m_value = std::atoi(words[1].c_str());
+				newOperation.m_loopsRemain = 2;
+			}
+			else if (words[0] == "noop")
+			{
+				newOperation.m_type = OperationType::NOOP;
+				newOperation.m_loopsRemain = 1;
+			}
+
+			currOperation = newOperation;
+
+			lineIndex++;
+		}
+
+		currOperation.m_loopsRemain--;
+		loopsTaken++;
+		if ((loopsTaken - 20) % 40 == 0)
+		{
+			result += loopsTaken * x;
+		}
+	}
+
+	return result;
+}
+
+void D10P2()
+{
+	std::vector<std::string> lines = LineParser("Inputs/input9", '\n');
+
+	int x = 1;
+
+	int loopsTaken = 0;
+	Operation currOperation;
+	int lineIndex = 0;
+
+	for (; lineIndex < lines.size();)
+	{
+		if (currOperation.m_loopsRemain <= 0)
+		{
+			// Finish currOperation
+			if (currOperation.m_type == OperationType::ADD_X)
+			{
+				x += currOperation.m_value;
+			}
+
+			// Adding new operation
+			std::vector<std::string> words;
+			DivideStringByDelimiter(lines[lineIndex], ' ', words);
+
+			Operation newOperation;
+
+			if (words[0] == "addx")
+			{
+				newOperation.m_type = OperationType::ADD_X;
+				newOperation.m_value = std::atoi(words[1].c_str());
+				newOperation.m_loopsRemain = 2;
+			}
+			else if (words[0] == "noop")
+			{
+				newOperation.m_type = OperationType::NOOP;
+				newOperation.m_loopsRemain = 1;
+			}
+
+			currOperation = newOperation;
+
+			lineIndex++;
+		}
+
+		currOperation.m_loopsRemain--;
+		loopsTaken++;
+
+		int rem = loopsTaken % 40 - 1;
+
+		if (abs(rem - x) <= 1)
+		{
+			std::cout << '#';
+		}
+		else
+		{
+			std::cout << '.';
+		}
+		
+		if (rem == -1)
+		{
+			std::cout << std::endl;
+		}
+	}
+}
 
 int main()
 {
-	std::cout << "D1P1 answer is: " << D1P1() << std::endl;
-	std::cout << "D1P2 answer is: " << D1P2() << std::endl;
-	std::cout << "D2P1 answer is: " << D2P1() << std::endl;
-	std::cout << "D2P2 answer is: " << D2P2() << std::endl;
-	std::cout << "D3P1 answer is: " << D3P1() << std::endl;
-	std::cout << "D3P2 answer is: " << D3P2() << std::endl;
-	std::cout << "D4P1 answer is: " << D4P1() << std::endl;
-	std::cout << "D4P2 answer is: " << D4P2() << std::endl;
-	std::cout << "D5P1 answer is: " << D5P1() << std::endl;
-	std::cout << "D5P2 answer is: " << D5P2() << std::endl;
-	std::cout << "D6P1 answer is: " << D6P1() << std::endl;
-	std::cout << "D6P1 answer is: " << D6P2() << std::endl;
-	std::cout << "D7P1 answer is: " << D7P1() << std::endl;
-	std::cout << "D7P2 answer is: " << D7P2() << std::endl;
+	//std::cout << "D1P1 answer is: " << D1P1() << std::endl;
+	//std::cout << "D1P2 answer is: " << D1P2() << std::endl;
+	//std::cout << "D2P1 answer is: " << D2P1() << std::endl;
+	//std::cout << "D2P2 answer is: " << D2P2() << std::endl;
+	//std::cout << "D3P1 answer is: " << D3P1() << std::endl;
+	//std::cout << "D3P2 answer is: " << D3P2() << std::endl;
+	//std::cout << "D4P1 answer is: " << D4P1() << std::endl;
+	//std::cout << "D4P2 answer is: " << D4P2() << std::endl;
+	//std::cout << "D5P1 answer is: " << D5P1() << std::endl;
+	//std::cout << "D5P2 answer is: " << D5P2() << std::endl;
+	//std::cout << "D6P1 answer is: " << D6P1() << std::endl;
+	//std::cout << "D6P1 answer is: " << D6P2() << std::endl;
+	//std::cout << "D7P1 answer is: " << D7P1() << std::endl;
+	//std::cout << "D7P2 answer is: " << D7P2() << std::endl;
+	//std::cout << "D8P1 answer is: " << D8P1() << std::endl;
+	//std::cout << "D8P2 answer is: " << D8P2() << std::endl;
+	//std::cout << "D9P1 answer is: " << D9P1() << std::endl;
+	//std::cout << "D9P2 answer is: " << D9P2() << std::endl;
+	//std::cout << "D10P1 answer is: " << D10P1() << std::endl;
+	//D10P2();
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
